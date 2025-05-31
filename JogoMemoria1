@@ -1,0 +1,84 @@
+#define ledVermelho 4
+#define ledVerde 19
+#define ledAmarelo 18
+#define ledAzul 22
+
+#define botaoVermelho 12
+#define botaoVerde 32
+#define botaoAmarelo 34
+#define botaoAzul 26
+
+#define TAMANHO_SEQUENCIA 4
+#define INDEFINIDO -1
+int sequenciaLuzes[TAMANHO_SEQUENCIA];
+const int meusNumeros[] = {ledVermelho,ledAmarelo,ledVerde,ledAzul};
+const int NUM_LEDS_DISPONIVEIS = sizeof(meusNumeros) / sizeof(meusNumeros[0]);
+
+void setup() {
+  Serial.begin(9600);
+  iniciaPortas();
+  iniciaJogo();
+}
+
+void iniciaJogo(){
+  for(int i = 0;i<TAMANHO_SEQUENCIA;i++)  {
+    sequenciaLuzes[i] = sorteiaCor();
+    Serial.print("Cor sorteada para a sequencia: ");
+    Serial.println(sequenciaLuzes[i]);
+  }
+}
+
+void iniciaPortas(){
+    pinMode(ledVerde, OUTPUT);
+    pinMode(ledAmarelo, OUTPUT);
+    pinMode(ledVermelho, OUTPUT);
+    pinMode(ledAzul, OUTPUT);
+
+    pinMode(botaoVerde, INPUT_PULLUP);
+    pinMode(botaoAmarelo, INPUT_PULLUP);
+    pinMode(botaoVermelho, INPUT_PULLUP);
+    pinMode(botaoAzul, INPUT_PULLUP);
+}
+
+void loop() {
+  for(int i = 0; i < TAMANHO_SEQUENCIA; i++)  {
+    piscaLed(sequenciaLuzes[i]);
+  }
+  Serial.print("Sequencia criada. Pressione um botão:");
+  int botaoPrecionado = INDEFINIDO;
+  while(botaoPrecionado == INDEFINIDO)  {
+    botaoPrecionado = confereResposta();
+  }
+  delay(2000);  
+}
+
+int confereResposta() {
+  if(digitalRead(botaoVerde) == LOW) {
+    return piscaLed(ledVerde);
+  }
+if(digitalRead(botaoAmarelo) == LOW) {
+    return piscaLed(ledAmarelo);
+  }
+  if(digitalRead(botaoVermelho) == LOW) {
+    return piscaLed(ledVermelho);
+  }
+  if(digitalRead(botaoAzul) == LOW) {
+    return piscaLed(ledAzul);
+  }
+  else {
+  return INDEFINIDO;
+  }
+  }
+
+int piscaLed(int portaLed){
+  digitalWrite(portaLed,HIGH);
+  delay(1000); 
+  digitalWrite(portaLed,LOW);
+  delay(500);
+  return portaLed;
+}
+
+int sorteiaCor()  {
+  int indiceAleatorio = random(NUM_LEDS_DISPONIVEIS); 
+  return  meusNumeros[indiceAleatorio];
+}
