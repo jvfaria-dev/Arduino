@@ -1,0 +1,173 @@
+#define ledVermelho 4
+#define ledVerde 19
+#define ledAmarelo 18
+#define ledAzul 22
+
+#define botaoVermelho 12
+#define botaoVerde 32
+#define botaoAmarelo 34
+#define botaoAzul 26
+
+#define TAMANHO_SEQUENCIA 4
+#define INDEFINIDO -1
+int sequenciaLuzes[TAMANHO_SEQUENCIA];
+enum Estados{
+  PRONTO_P_PROX_RODADA,
+  RESPOSTA_USUARIO,
+  JOGO_FINALIZADO_SUCESSO,
+  JOGO_FINALIZADO_FALHA
+};
+const int meusNumeros[] = {ledVermelho,ledAmarelo,ledVerde,ledAzul};
+const int NUM_LEDS_DISPONIVEIS = sizeof(meusNumeros) / sizeof(meusNumeros[0]);
+
+int rodada = 0;
+int ledsRespondidos = 0;
+
+void setup() {
+  Serial.begin(9600);
+  // A linha randomSeed(analogRead(0)); seria removida aqui.
+  iniciaPortas();
+  iniciaJogo();
+}
+
+void iniciaJogo(){
+  Serial.println("----------Iniciando o jogo----------");
+
+  int jogo = analogRead(14);
+  randomSeed(jogo);
+  
+  for(int i = 0;i<TAMANHO_SEQUENCIA;i++)  {
+    sequenciaLuzes[i] = sorteiaCor();
+  }
+}
+
+void iniciaPortas(){
+    pinMode(ledVerde, OUTPUT);
+    pinMode(ledAmarelo, OUTPUT);
+    pinMode(ledVermelho, OUTPUT);
+    pinMode(ledAzul, OUTPUT);
+
+    pinMode(botaoVerde, INPUT_PULLUP);
+    pinMode(botaoAmarelo, INPUT_PULLUP);
+    pinMode(botaoVermelho, INPUT_PULLUP);
+    pinMode(botaoAzul, INPUT_PULLUP);
+}
+
+void loop() {
+  switch (estadoAtual()) {
+    case PRONTO_P_PROX_RODADA:
+      Serial.println("Pronto para a próxima rodada?");
+      preparaProximaRodada();
+      break;
+    case RESPOSTA_USUARIO:
+      Serial.println("Conferindo resposta do usuário!");
+      processaResposta();
+      break;
+    case JOGO_FINALIZADO_SUCESSO:
+      Serial.println("Jogo finalizado com sucesso!");
+      jogoFinalizadoSucesso();
+      break;
+    case JOGO_FINALIZADO_FALHA:
+      Serial.println("Infelizmente não foi dessa vez. Tente novamente!");
+      jogoFinalizadoFalha();
+      break;
+  }
+  delay(500);
+}
+
+void preparaProximaRodada() {
+  rodada++;
+  ledsRespondidos = 0;
+  if(rodada <= TAMANHO_SEQUENCIA)  {
+    tocaLeds();
+  }
+}
+
+void tocaLeds() {
+  for(int i = 0; i < rodada; i++)  {
+    piscaLed(sequenciaLuzes[i]);
+  }
+}
+
+int estadoAtual() {
+  if(rodada <= TAMANHO_SEQUENCIA)  {
+    if(ledsRespondidos == rodada) {
+      return PRONTO_P_PROX_RODADA;
+    } else {
+      return RESPOSTA_USUARIO;
+    }
+  } else if(rodada == TAMANHO_SEQUENCIA + 1) {
+    return JOGO_FINALIZADO_SUCESSO;
+  } else  {
+    return JOGO_FINALIZADO_FALHA;
+  }
+}
+
+void processaResposta() {
+  int resposta = confereResposta();
+  
+  if (resposta == INDEFINIDO) {
+    return;
+  }
+
+  if(resposta == sequenciaLuzes[ledsRespondidos])  {
+    ledsRespondidos++;
+  } else {
+    Serial.println("Resposta Errada!");
+    rodada = TAMANHO_SEQUENCIA + 2;
+  }
+}
+
+int confereResposta() {
+  if(digitalRead(botaoVerde) == LOW) {
+    return piscaLed(ledVerde);
+  }
+  if(digitalRead(botaoAmarelo) == LOW) {
+    return piscaLed(ledAmarelo);
+  }
+  if(digitalRead(botaoVermelho) == LOW) {
+    return piscaLed(ledVermelho);
+  }
+  if(digitalRead(botaoAzul) == LOW) {
+    return piscaLed(ledAzul);
+  }
+  return INDEFINIDO;
+}
+
+void jogoFinalizadoSucesso() {
+  piscaLed(ledVerde);
+  piscaLed(ledAmarelo);
+  piscaLed(ledVermelho);
+  piscaLed(ledAzul);
+  delay(500);
+}
+
+void jogoFinalizadoFalha() {
+  digitalWrite(ledVerde,HIGH);
+  digitalWrite(ledAmarelo,HIGH);
+  digitalWrite(ledVermelho,HIGH);
+  digitalWrite(ledAzul,HIGH);
+  delay(500);
+  digitalWrite(ledVerde,LOW);
+  digitalWrite(ledAmarelo,LOW);
+  digitalWrite(ledVermelho,LOW);
+  digitalWrite(ledAzul,LOW);
+  delay(500);
+}
+
+int piscaLed(int portaLed){
+  digitalWrite(portaLed,HIGH);
+  delay(1000);
+  digitalWrite(portaLed,LOW);
+  delay(500);
+  return portaLed;
+}
+
+int sorteiaCor()  {
+  return random(ledVerde, ledAzul + 1);
+}
+
+/*int sorteiaCor()  {
+  int indiceAleatorio = random(NUM_LEDS_DISPONIVEIS);
+  return meusNumeros[indiceAleatorio];
+}*/
